@@ -27,7 +27,8 @@ Since the official Polestar App does not support any kind of widgets for iOS, I 
 
 2. There are two options to install the widget:
     - [Recommended] Click on the following button to install via `ScriptDude` (make sure that you have followed step 3 of [Prerequisites](./README.md#Prerequisites)). ScriptDude will automatically receive updates of new versions of this widget
-        [![Download with ScriptDude](https://scriptdu.de/download.svg)](https://scriptdu.de/?name=Polestar+Medium+SoC+Widget&source=https%3A%2F%2Fgist.githubusercontent.com%2Fniklasvieth%2F159c13dd7ef94bd608358ce964b66c7c%2Fraw%2Fe05830e0f1b572089b99e73344ac192e8d7f808d%2Fpolestar-medium-widget.js&docs=https%3A%2F%2Fgithub.com%2Fniklasvieth%2Fpolestar-ios-medium-widget%2Fblob%2Fmain%2FREADME.md#generator)
+
+        [![Download with ScriptDude](https://scriptdu.de/download.svg)](https://scriptdu.de/?name=Polestar%20Medium%20SoC%20Widget&source=https%3A%2F%2Fgist.githubusercontent.com%2Fniklasvieth%2F159c13dd7ef94bd608358ce964b66c7c%2Fraw%2Fe05830e0f1b572089b99e73344ac192e8d7f808d%2Fpolestar-medium-widget.js&docs=https%3A%2F%2Fgithub.com%2Fniklasvieth%2Fpolestar-ios-medium-widget%2Fblob%2Fmain%2FREADME.md#generator)
 
     - Copy the content of [polestar-medium-widget.js](https://gist.github.com/niklasvieth/159c13dd7ef94bd608358ce964b66c7c), create a new script in `Scriptable`, paste the content and rename it to `Polestar Medium SoC Widget`.
 
