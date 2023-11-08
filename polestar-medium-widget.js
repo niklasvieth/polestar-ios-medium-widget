@@ -104,6 +104,7 @@ async function createPolestarWidget(tibberData) {
   } else {
     lastSeenElement = footerStack.addText(lastSeenText);
   }
+  lastSeenElement.textColor = Color.white();
   lastSeenElement.font = Font.mediumSystemFont(10);
   lastSeenElement.textOpacity = 0.5;
   lastSeenElement.minimumScaleFactor = 0.5;
