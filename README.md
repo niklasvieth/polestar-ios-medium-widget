@@ -54,6 +54,8 @@ Since the official Polestar App does not support any kind of widgets for iOS, I 
 
 7. You should now be able to see the :battery: SoC of your Polestar on you homescreen. By clicking on the widget you will be navigated to the Polestar App.
 
+8. [Optional] Mac users: You can even add the widget to you your Desktop or Notification Center if you have followed the above steps on you iPhone (see [Apple How-To Guide](https://support.apple.com/en-al/guide/mac-help/mchl52be5da5/mac#:~:text=Use%20iPhone%20widgets%20on%20your%20Mac)).
+
 ## Additional comments
 
 There might be a minor lag or difference of the SoC compared to value displayed in the Polestar App because of the following reasons:
