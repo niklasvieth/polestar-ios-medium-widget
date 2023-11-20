@@ -9,6 +9,8 @@
 const TIBBER_EMAIL = "EMAIL_ADDRESS";
 const TIBBER_PASSWORD = "PASSWORD";
 const LAST_SEEN_RELATIVE_DATE = true; // false
+const MIN_SOC_GREEN = 60; 
+const MIN_SOC_ORANGE = 30;
 
 const TIBBER_BASE_URL = "https://app.tibber.com";
 const POLESTAR_ICON = "https://www.polestar.com/w3-assets/coast-228x228.png";
@@ -162,9 +164,9 @@ async function loadImage(url) {
  * Formatters
  *************/
 function getBatteryPercentColor(percent) {
-  if (percent > 60) {
+  if (percent > MIN_SOC_GREEN) {
     return Color.green();
-  } else if (percent > 30) {
+  } else if (percent > MIN_SOC_ORANGE) {
     return Color.orange();
   } else {
     return Color.red();
