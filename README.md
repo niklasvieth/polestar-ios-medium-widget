@@ -34,7 +34,7 @@ Since the official Polestar App does not support any kind of widgets for iOS, I 
 
     - Copy the content of [polestar-medium-widget.js](https://gist.github.com/niklasvieth/159c13dd7ef94bd608358ce964b66c7c), create a new script in `Scriptable`, paste the content and rename it to `Polestar Medium SoC Widget`.
 
-3. Replace the placeholder values for `POLESTAR_EMAIL` and `POLESTAR_PASSWORD` with your Tibber login credentials.
+3. Replace the placeholder values for `POLESTAR_EMAIL` and `POLESTAR_PASSWORD` with your Polestar login credentials.
 
     ```js
     // Mandatory Config
