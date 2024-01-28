@@ -1,23 +1,25 @@
 # Polestar SoC iOS Medium Widget
 
-An iOS medium widget to display the current state of charge (SoC) of your Polestar 2.
+An iOS medium widget to display the current state of charge (SoC) of your Polestar.
 
-<img src="./images/polestar_medium_widget_relative.jpeg" width="300" alt="Polestar Medium Widget Relative Date"/>
+<img src="./images/polestar_medium_widget_relative.png" width="300" alt="Polestar Medium Widget Relative Date"/>
 
-<img src="./images/polestar_medium_widget.jpeg" width="300" alt="Polestar Medium Widget"/>
+<img src="./images/polestar_medium_widget.png" width="300" alt="Polestar Medium Widget"/>
 
-<img src="./images/polestar_medium_widget_relative_low.jpeg" width="300" alt="Polestar Medium Widget Relative Date Low"/>
+<img src="./images/polestar_medium_widget_light.png" width="300" alt="Polestar Medium Widget Light Mode"/>
+
+<img src="./images/polestar_medium_widget_charging.png" width="300" alt="Polestar Medium Widget Charging"/>
+
+<img src="./images/polestar_medium_widget_charging_done.png" width="300" alt="Polestar Medium Widget Charging Done"/>
 
 ## Background
 
-Since the official Polestar App does not support any kind of widgets for iOS, I developed my own with the help of [Scriptable](https://scriptable.app/). Without an official public Polestar API being released yet, the widget relies on the [Tibber GraphQL API](https://developer.tibber.com/docs/overview) as proxy to get the current state of charge of the battery. Thus, you will also need Tibber Account to get access to the SoC data.
+Since the official Polestar App does not support any kind of widgets for iOS, I developed my own with the help of [Scriptable](https://scriptable.app/). It uses the official Polestar API which is also used to display the battery status in your profile at https://www.polestar.com.
 
+> This widget is a hobby project and the developed code is not affiliated with Polestar AB or any Volvo company or any subsidiary or affiliate of any of the aforementioned companies.
 ## Prerequisites
 
-1. Free Tibber Account with configured Polestar Power-Up
-    > :warning: You **don't** need an electricity contract, you can just proceed with the free account.
-    - Install [Tibber App](https://apps.apple.com/de/app/tibber-%C3%B6kostrom/id1127805969) on your iPhone and follow the registration instructions. Make sure to remember the email & password used to create the Tibber account.
-    - [Configure Polestar Power-Up](https://support.tibber.com/en/articles/6675026-smart-charge-your-polestar-with-tibber#:~:text=How%20do%20I%20connect%20my%20Polestar%20to%20Tibber%3F)
+1. Polestar Account login credentials which should work at https://polestarid.eu.polestar.com/PolestarLogin/ (optionally the VIN of your car if more than one car is linked to the account).
 2. Install [Scriptable](https://apps.apple.com/de/app/scriptable/id1405459188) on your iPhone
 3. [Optional but recommended] Follow the [ScriptDude installation steps](https://scriptdu.de/#installation)
 
@@ -32,18 +34,23 @@ Since the official Polestar App does not support any kind of widgets for iOS, I 
 
     - Copy the content of [polestar-medium-widget.js](https://gist.github.com/niklasvieth/159c13dd7ef94bd608358ce964b66c7c), create a new script in `Scriptable`, paste the content and rename it to `Polestar Medium SoC Widget`.
 
-3. Replace the placeholder values for `TIBBER_EMAIL` and `TIBBER_PASSWORD` with your Tibber login credentials.
+3. Replace the placeholder values for `POLESTAR_EMAIL` and `POLESTAR_PASSWORD` with your Polestar login credentials.
 
     ```js
-    // Config
-    const TIBBER_EMAIL = "<EMAIL_ADDRESS>";
-    const TIBBER_PASSWORD = "<PASSWORD>";
+    // Mandatory Config
+    const POLESTAR_EMAIL = "EMAIL";
+    const POLESTAR_PASSWORD = "PASSWORD";
     ```
 
-4. [Optional] You can decide if you prefer the relative live counter or the absolute timestamp for the last seen date in the widget footer. Default is the relative format. Change the value to `false` if you prefer the absolute date.
+4. [Optional Configuration] You can decide if you prefer the relative live counter or the absolute timestamp for the last seen date in the widget footer. Default is the relative format. Change the value to `false` if you prefer the absolute date. You can additionally choose the angle of the image to be shown in the widget, change the battery color threshold values and enable miles instead of kilometer values.  
 
     ```js
-    const LAST_SEEN_RELATIVE_DATE = true; // false
+    const IMAGE_ANGLE = "0"; // Possible values 0,1,2,3,4,5
+    const RANGE_IN_MILES = false; // true
+    const LAST_SEEN_RELATIVE_DATE = false; // true
+
+    const MIN_SOC_GREEN = 60;
+    const MIN_SOC_ORANGE = 30;
     ```
 
 5. Add the medium `Scriptable` widget to your homescreen. See [Apple How-To guide](https://support.apple.com/en-us/HT207122#:~:text=How%20to%20add%20widgets%20to%20your%20Home%20Screen).
@@ -58,16 +65,23 @@ Since the official Polestar App does not support any kind of widgets for iOS, I 
 
 ## Additional comments
 
-There might be a minor lag or difference of the SoC compared to value displayed in the Polestar App because of the following reasons:
+There might be a minor lag or difference of the SoC compared to value displayed in the Polestar App because of the following reason:
 
-- The widget is relying on the Tibber API which syncs regularly with the actual Polestar API.
 - The refresh interval of the widget is determined by iOS itself.
+
+The widget supports light and dark mode. The mode is automatically fetched from your settings. If you want to enable or disable dark mode via
+
+```js
+const DARK_MODE = true // false
+```
 
 ### Appreciation
 
 - Thanks @simonbs for the awesome [Scriptable](https://scriptable.app/) app.
 
 ### Support me
+
+[!["Buy Me A Coffee"](https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png)](https://www.buymeacoffee.com/niklasvieth)
 
 <a href="https://www.paypal.me/niklasvieth" >
   <img src="https://raw.githubusercontent.com/stefan-niedermann/paypal-donate-button/master/paypal-donate-button.png" alt="Donate with PayPal" width="200px" />
