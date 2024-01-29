@@ -131,7 +131,7 @@ async function createPolestarWidget(batteryData, odometerData, vehicle) {
   // Range
   const rangeStack = batteryInfoStack.addStack();
   rangeStack.addSpacer();
-  const rangeText = RANGE_IN_MILES ? `${rangeMiles} miles` : `${rangeKm} km`;
+  const rangeText = RANGE_IN_MILES ? `${rangeMiles} mi` : `${rangeKm} km`;
   const rangeElement = rangeStack.addText(rangeText);
   rangeElement.font = Font.mediumSystemFont(20);
   rangeElement.textColor = DARK_MODE ? Color.white() : Color.black();
@@ -173,9 +173,10 @@ async function createPolestarWidget(batteryData, odometerData, vehicle) {
   const footerStack = mainStack.addStack();
 
   // Add odometer
-  const odometerElement = footerStack.addText(
-    `${parseInt(odometerData.odometerMeters / 1000).toLocaleString()} km`
-  );
+  const odometerText = RANGE_IN_MILES
+    ? `${parseInt(odometerData.odometerMeters / 1609.344).toLocaleString()} mi`
+    : `${parseInt(odometerData.odometerMeters / 1000).toLocaleString()} km`;
+  const odometerElement = footerStack.addText(odometerText);
   odometerElement.font = Font.mediumSystemFont(10);
   odometerElement.textColor = DARK_MODE ? Color.white() : Color.black();
   odometerElement.textOpacity = 0.5;
