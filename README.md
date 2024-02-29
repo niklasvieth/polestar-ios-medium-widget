@@ -52,6 +52,12 @@ Since the official Polestar App does not support any kind of widgets for iOS, I 
     const MIN_SOC_GREEN = 60;
     const MIN_SOC_ORANGE = 30;
     ```
+    
+    Using the setting below you can override the default vehicle name (Polestar 1/2/3) to a name of your choice, similar to the app functionality
+    ```js
+    let VEHICLE_NAME; // default name 
+    let VEHICLE_NAME = "Thor"; // change the name to "Thor"
+    ``` 
 
 5. Add the medium `Scriptable` widget to your homescreen. See [Apple How-To guide](https://support.apple.com/en-us/HT207122#:~:text=How%20to%20add%20widgets%20to%20your%20Home%20Screen).
 
