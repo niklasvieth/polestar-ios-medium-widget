@@ -11,6 +11,8 @@ const POLESTAR_PASSWORD = "PASSWORD";
 // Optional (only necessary if more than one car linked to account)
 let VIN;
 // let VIN = "VIN";
+let VEHICLE_NAME;
+// let VEHICLE_NAME = "Thor";
 
 // Additional optional configuration
 const IMAGE_ANGLE = "0"; // Possible values 0,1,2,3,4,5
@@ -92,7 +94,7 @@ async function createPolestarWidget(batteryData, odometerData, vehicle) {
   }&width=600`;
 
   const appIcon = await loadImage(POLESTAR_ICON);
-  const title = vehicle.content.model.name;
+  const title = VEHICLE_NAME ?? vehicle.content.model.name;
   const widget = new ListWidget();
   widget.url = "polestar-explore://";
   const mainStack = widget.addStack();
