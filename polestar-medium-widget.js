@@ -12,7 +12,7 @@ const POLESTAR_PASSWORD = "PASSWORD";
 let VIN;
 // let VIN = "VIN";
 let VEHICLE_NAME;
-// let VEHICLE_NAME = "Thor";
+// let VEHICLE_NAME = "Polestar Custom Name";
 
 // Additional optional configuration
 const IMAGE_ANGLE = "0"; // Possible values 0,1,2,3,4,5
@@ -80,6 +80,9 @@ async function createPolestarWidget(batteryData, odometerData, vehicle) {
   const isConnected =
     batteryData.chargerConnectionStatus ===
     "CHARGER_CONNECTION_STATUS_CONNECTED";
+  const chargingAmps = batteryData.chargingCurrentAmps ?? 0;
+  const chargingWatts = batteryData.chargingPowerWatts ?? 0;
+  const chargingKw = parseInt(chargingWatts / 1000);
 
   // Prepare image
   if (!vehicle.content.images.studio.angles.includes(IMAGE_ANGLE)) {
@@ -165,9 +168,10 @@ async function createPolestarWidget(batteryData, odometerData, vehicle) {
     const remainingChargeTimeHours = parseInt(remainingChargingTime / 60);
     const remainingChargeTimeMinsRemainder = remainingChargingTime % 60;
     const chargingTimeElement = batteryChargingTimeStack.addText(
-      `${remainingChargeTimeHours}h ${remainingChargeTimeMinsRemainder}m`
+      `${chargingKw} kW  -  ${remainingChargeTimeHours}h ${remainingChargeTimeMinsRemainder}m`
     );
     chargingTimeElement.font = Font.mediumSystemFont(14);
+    chargingTimeElement.textOpacity = 0.9;
     chargingTimeElement.textColor = DARK_MODE ? Color.white() : Color.black();
     chargingTimeElement.rightAlignText();
   }
