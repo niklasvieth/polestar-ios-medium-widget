@@ -167,8 +167,9 @@ async function createPolestarWidget(batteryData, odometerData, vehicle) {
     batteryChargingTimeStack.addSpacer();
     const remainingChargeTimeHours = parseInt(remainingChargingTime / 60);
     const remainingChargeTimeMinsRemainder = remainingChargingTime % 60;
+    const chargeSpeedString = chargingKw ? `${chargingKw} kW` : "DC";
     const chargingTimeElement = batteryChargingTimeStack.addText(
-      `${chargingKw} kW  -  ${remainingChargeTimeHours}h ${remainingChargeTimeMinsRemainder}m`
+      `${chargeSpeedString} -  ${remainingChargeTimeHours}h ${remainingChargeTimeMinsRemainder}m`
     );
     chargingTimeElement.font = Font.mediumSystemFont(14);
     chargingTimeElement.textOpacity = 0.9;
