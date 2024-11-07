@@ -30,6 +30,7 @@ const POLESTAR_BASE_URL = "https://pc-api.polestar.com/eu-north-1";
 const POLESTAR_API_URL_V2 = `${POLESTAR_BASE_URL}/mystar-v2`;
 const POLESTAR_API_URL = `${POLESTAR_BASE_URL}/my-star`;
 const POLESTAR_ICON = "https://www.polestar.com/w3-assets/coast-228x228.png";
+const CLIENT_ID = "l3oopkc_10";
 
 // Check that params are set
 if (POLESTAR_EMAIL === "EMAIL") {
@@ -241,15 +242,47 @@ async function performLogin(pathToken, cookie) {
   };
   await req.load();
   const redirectUrl = req.response.headers.Location;
-  const regex = /code=([^&]+)/;
-  const match = redirectUrl.match(regex);
-  const tokenRequestCode = match ? match[1] : null;
+  const codeRegex = /code=([^&]+)/;
+  let codeMatch = redirectUrl.match(codeRegex);
+  const uidRegex = /uid=([^&]+)/;
+  const uidMatch = redirectUrl.match(uidRegex);
+  if (!codeMatch || codeMatch.length === 0) {
+    console.warn("No code found");
+    if (uidMatch && uidMatch.length > 0) {
+      const uid = uidMatch[1];
+      const reqConfirm = new Request(
+        `https://polestarid.eu.polestar.com/as/${pathToken}/resume/as/authorization.ping`
+      );
+      reqConfirm.method = "post";
+      reqConfirm.body = getUrlEncodedParams({
+        "pf.submit": true,
+        subject: uid,
+      });
+      reqConfirm.headers = {
+        "Content-Type": "application/x-www-form-urlencoded",
+        Cookie: cookie,
+      };
+      reqConfirm.onRedirect = (redReq) => {
+        return null;
+      };
+      await reqConfirm.load();
+      const redirectUrl2 = reqConfirm.response.headers.Location;
+      const codeRegex = /code=([^&]+)/;
+      codeMatch = redirectUrl2.match(codeRegex);
+      if (!codeMatch || codeMatch.length === 0) {
+        throw new Error("No token found after confirmation");
+      }
+    } else {
+      throw new Error("Not authenticated, please check login email & password");
+    }
+  }
+  const tokenRequestCode = codeMatch[1];
   return tokenRequestCode;
 }
 
 async function getLoginFlowTokens() {
   const req = new Request(
-    "https://polestarid.eu.polestar.com/as/authorization.oauth2?response_type=code&client_id=polmystar&redirect_uri=https://www.polestar.com%2Fsign-in-callback&scope=openid+profile+email+customer%3Aattributes"
+    `https://polestarid.eu.polestar.com/as/authorization.oauth2?response_type=code&client_id=${CLIENT_ID}&redirect_uri=https://www.polestar.com%2Fsign-in-callback&scope=openid+profile+email+customer%3Aattributes`
   );
   req.headers = { Cookie: "" };
   let redirectUrl;
