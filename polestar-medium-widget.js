@@ -335,7 +335,7 @@ async function getVehicles(accessToken) {
       "query getCars{getConsumerCarsV2{vin,internalVehicleIdentifier,modelYear,content{model{code,name},images,{studio,{url,angles}}},hasPerformancePackage,registrationNo,deliveryDate,currentPlannedDeliveryDate}}",
     variables: {},
   };
-  const req = new Request(POLESTAR_API_URL);
+  const req = new Request(POLESTAR_API_URL_V2);
   req.method = "POST";
   req.headers = {
     "Content-Type": "application/json",
