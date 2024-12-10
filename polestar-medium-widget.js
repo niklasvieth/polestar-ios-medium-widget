@@ -29,8 +29,11 @@ const LIGHT_BG_COLOR = "FFFFFF";
 const POLESTAR_BASE_URL = "https://pc-api.polestar.com/eu-north-1";
 const POLESTAR_API_URL_V2 = `${POLESTAR_BASE_URL}/mystar-v2`;
 const POLESTAR_API_URL = `${POLESTAR_BASE_URL}/my-star`;
+const POLESTAR_REDIRECT_URI = "https://www.polestar.com/sign-in-callback";
 const POLESTAR_ICON = "https://www.polestar.com/w3-assets/coast-228x228.png";
 const CLIENT_ID = "l3oopkc_10";
+const CODE_VERIFIER = "polestar-ios-widgets-are-enabled-by-scriptable";
+const CODE_CHALLENGE = "adYJTSAVqq6CWBJn7yNdGKwcsmJb8eBewG8WpxnUzaE";
 
 // Check that params are set
 if (POLESTAR_EMAIL === "EMAIL") {
@@ -226,7 +229,7 @@ async function getAccessToken() {
 
 async function performLogin(pathToken, cookie) {
   const req = new Request(
-    `https://polestarid.eu.polestar.com/as/${pathToken}/resume/as/authorization.ping`
+    `https://polestarid.eu.polestar.com/as/${pathToken}/resume/as/authorization.ping?client_id=${CLIENT_ID}`
   );
   req.method = "post";
   req.body = getUrlEncodedParams({
@@ -251,7 +254,7 @@ async function performLogin(pathToken, cookie) {
     if (uidMatch && uidMatch.length > 0) {
       const uid = uidMatch[1];
       const reqConfirm = new Request(
-        `https://polestarid.eu.polestar.com/as/${pathToken}/resume/as/authorization.ping`
+        `https://polestarid.eu.polestar.com/as/${pathToken}/resume/as/authorization.ping?client_id=${CLIENT_ID}`
       );
       reqConfirm.method = "post";
       reqConfirm.body = getUrlEncodedParams({
@@ -281,8 +284,17 @@ async function performLogin(pathToken, cookie) {
 }
 
 async function getLoginFlowTokens() {
+  const params = getUrlEncodedParams({
+    response_type: "code",
+    client_id: CLIENT_ID,
+    redirect_uri: POLESTAR_REDIRECT_URI,
+    scope: "openid profile email customer:attributes",
+    state: "ea5aa2860f894a9287a4819dd5ada85c",
+    code_challenge: CODE_CHALLENGE,
+    code_challenge_method: "S256",
+  });
   const req = new Request(
-    `https://polestarid.eu.polestar.com/as/authorization.oauth2?response_type=code&client_id=${CLIENT_ID}&redirect_uri=https://www.polestar.com%2Fsign-in-callback&scope=openid+profile+email+customer%3Aattributes`
+    `https://polestarid.eu.polestar.com/as/authorization.oauth2?${params}`
   );
   req.headers = { Cookie: "" };
   let redirectUrl;
@@ -303,22 +315,24 @@ async function getLoginFlowTokens() {
 }
 
 async function getApiToken(tokenRequestCode) {
-  const req = new Request(`${POLESTAR_BASE_URL}/auth`);
+  const req = new Request(`https://polestarid.eu.polestar.com/as/token.oauth2`);
   req.method = "POST";
   req.headers = {
-    "Content-Type": "application/json",
+    "Content-Type": "application/x-www-form-urlencoded",
   };
-  req.body = JSON.stringify({
-    query:
-      "query getAuthToken($code: String!){getAuthToken(code: $code){id_token,access_token,refresh_token,expires_in}}",
-    operationName: "getAuthToken",
-    variables: { code: tokenRequestCode },
+
+  req.body = getUrlEncodedParams({
+    grant_type: "authorization_code",
+    code: tokenRequestCode,
+    code_verifier: CODE_VERIFIER,
+    client_id: CLIENT_ID,
+    redirect_uri: POLESTAR_REDIRECT_URI,
   });
+
   req.onRedirect = (redReq) => {
     return null;
   };
-  const response = await req.loadJSON();
-  const apiCreds = response.data.getAuthToken;
+  const apiCreds = await req.loadJSON();
   return {
     access_token: apiCreds.access_token,
     refresh_token: apiCreds.refresh_token,
