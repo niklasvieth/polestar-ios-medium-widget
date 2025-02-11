@@ -49,10 +49,9 @@ if (VIN === "VIN") {
 // Create Widget
 const accessToken = await getAccessToken();
 const vehicleData = await getVehicles(accessToken);
-const [batteryData, odometerData] = await Promise.all([
-  getBattery(accessToken),
-  getOdometerData(accessToken),
-]);
+const telematicData = await getTelematics(accessToken);
+const batteryData = telematicData.carTelematics.battery;
+const odometerData = telematicData.carTelematics.odometer;
 
 // You can run the script in the app to preview the widget or you can go to the Home Screen, add a new Scriptable widget and configure the widget to run this script.
 // You can also try creating a shortcut that runs this script. Running the shortcut will show widget.
@@ -340,6 +339,31 @@ async function getApiToken(tokenRequestCode) {
   };
 }
 
+async function getTelematics(accessToken) {
+  if (!accessToken) {
+    throw new Error("Not authenticated");
+  } 
+  const searchParams = {
+    query:
+      "query CarTelematics($vin:String!) { carTelematics(vin: $vin) { battery { averageEnergyConsumptionKwhPer100Km,batteryChargeLevelPercentage,chargerConnectionStatus,chargingCurrentAmps,chargingPowerWatts,chargingStatus,estimatedChargingTimeMinutesToTargetDistance,estimatedChargingTimeToFullMinutes,estimatedDistanceToEmptyKm,estimatedDistanceToEmptyMiles,eventUpdatedTimestamp{iso,unix}}, odometer { averageSpeedKmPerHour,eventUpdatedTimestamp,{iso,unix},odometerMeters,tripMeterAutomaticKm,tripMeterManualKm}}}",
+    variables: {
+      vin: VIN,
+    },
+  };
+  const req = new Request(POLESTAR_API_URL_V2);
+  req.method = "POST";
+  req.headers = {
+    "Content-Type": "application/json",
+    Authorization: "Bearer " + accessToken,
+  };
+  req.body = JSON.stringify(searchParams);
+  const response = await req.loadJSON();
+  if (!response?.data) {
+    throw new Error("No telematics data fetched");
+  }
+  return response.data;
+}
+
 async function getVehicles(accessToken) {
   if (!accessToken) {
     throw new Error("Not authenticated");
@@ -368,56 +392,6 @@ async function getVehicles(accessToken) {
   }
   VIN = vehicle.vin;
   return vehicle;
-}
-
-async function getBattery(accessToken) {
-  if (!accessToken) {
-    throw new Error("Not authenticated");
-  }
-  const searchParams = {
-    query:
-      "query GetBatteryData($vin:String!){getBatteryData(vin:$vin){averageEnergyConsumptionKwhPer100Km,batteryChargeLevelPercentage,chargerConnectionStatus,chargingCurrentAmps,chargingPowerWatts,chargingStatus,estimatedChargingTimeMinutesToTargetDistance,estimatedChargingTimeToFullMinutes,estimatedDistanceToEmptyKm,estimatedDistanceToEmptyMiles,eventUpdatedTimestamp{iso,unix}}}",
-    variables: {
-      vin: VIN,
-    },
-  };
-  const req = new Request(POLESTAR_API_URL_V2);
-  req.method = "POST";
-  req.headers = {
-    "Content-Type": "application/json",
-    Authorization: "Bearer " + accessToken,
-  };
-  req.body = JSON.stringify(searchParams);
-  const response = await req.loadJSON();
-  if (!response?.data?.getBatteryData) {
-    throw new Error("No battery data fetched");
-  }
-  return response.data.getBatteryData;
-}
-
-async function getOdometerData(accessToken) {
-  if (!accessToken) {
-    throw new Error("Not authenticated");
-  }
-  const searchParams = {
-    query:
-      "query GetOdometerData($vin: String!){getOdometerData(vin:$vin){averageSpeedKmPerHour,eventUpdatedTimestamp,{iso,unix},odometerMeters,tripMeterAutomaticKm,tripMeterManualKm}}",
-    variables: {
-      vin: VIN,
-    },
-  };
-  const req = new Request(POLESTAR_API_URL_V2);
-  req.method = "POST";
-  req.headers = {
-    "Content-Type": "application/json",
-    Authorization: "Bearer " + accessToken,
-  };
-  req.body = JSON.stringify(searchParams);
-  const response = await req.loadJSON();
-  if (!response?.data?.getOdometerData) {
-    throw new Error("No odometer data fetched");
-  }
-  return response.data.getOdometerData;
 }
 
 async function loadImage(url) {
