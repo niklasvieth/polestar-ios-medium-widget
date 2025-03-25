@@ -282,7 +282,12 @@ async function performLogin(pathToken, cookie) {
   return tokenRequestCode;
 }
 
+/**
+ * Liest die Auth-Seite und extrahiert den Pfad-Token aus dem Body.
+ * Der Token steht nun im Text ab "url:" und ist das dritte "/"-Segment.
+ */
 async function getLoginFlowTokens() {
+  // Baue die Parameter zusammen
   const params = getUrlEncodedParams({
     response_type: "code",
     client_id: CLIENT_ID,
@@ -292,24 +297,44 @@ async function getLoginFlowTokens() {
     code_challenge: CODE_CHALLENGE,
     code_challenge_method: "S256",
   });
-  const req = new Request(
-    `https://polestarid.eu.polestar.com/as/authorization.oauth2?${params}`
-  );
-  req.headers = { Cookie: "" };
-  let redirectUrl;
-  req.onRedirect = (redReq) => {
-    redirectUrl = redReq.url;
-    return null;
+
+  // Erstelle den Request
+  const url = `https://polestarid.eu.polestar.com/as/authorization.oauth2?${params}`;
+  const req = new Request(url);
+
+  // Setze optional Header (Cookie hier leer, kann aber wichtig sein, wenn man persistente Sessions braucht)
+  req.method = "GET";
+  req.headers = {
+    Cookie: "",
   };
-  await req.loadString();
-  const regex = /resumePath=(\w+)/;
-  const match = redirectUrl.match(regex);
-  const pathToken = match ? match[1] : null;
+
+  // Lese den Body als String (kein Redirect mehr)
+  const body = await req.loadString();
+
+  // Extrahiere das Set-Cookie aus der Response
+  // Da manche Libraries evtl. anders auf Headers zugreifen,
+  // bitte sicherstellen, dass `req.response` und `req.response.headers` existieren:
   const cookies = req.response.headers["Set-Cookie"];
+  // Hier holst du dir den ersten Teil vom Cookie (bis zum ersten Semikolon)
+  // und fügst einen Strichpunkt am Ende hinzu, damit es als vollständiges Cookie nutzbar ist
   const cookie = cookies.split("; ")[0] + ";";
+
+  // Nun im Body nach "url:" suchen und das dritte "/"-Segment als Token nehmen
+  // (so wie in deinem Python-Code)
+  let pathToken = null;
+  if (body.includes("url:")) {
+    // Splittet ab "url:", danach noch einmal mit "/" => 0: "", 1: "//irgendwas", 2: Token
+    // Beispiel:  body.split("url:")[1] => "/https://domain.com/path1/path2" ...
+    const partAfterUrl = body.split("url:")[1];         // alles nach "url:"
+    const segments    = partAfterUrl.split("/");        // weiter aufteilen
+    // segments[2] sollte dein Token sein (prüfe ggf. Segments-Länge ab)
+    pathToken = segments[2];
+  }
+
+  // Gib Token und Cookie zurück
   return {
-    pathToken: pathToken,
-    cookie: cookie,
+    pathToken,
+    cookie,
   };
 }
 
