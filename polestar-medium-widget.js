@@ -296,15 +296,13 @@ async function getLoginFlowTokens() {
     `https://polestarid.eu.polestar.com/as/authorization.oauth2?${params}`
   );
   req.headers = { Cookie: "" };
-  let redirectUrl;
-  req.onRedirect = (redReq) => {
-    redirectUrl = redReq.url;
-    return null;
-  };
-  await req.loadString();
-  const regex = /resumePath=(\w+)/;
-  const match = redirectUrl.match(regex);
+  const body = await req.loadString();
+  const regex = /\/as\/([a-zA-Z0-9]+)\/resume/;
+  const match = body.match(regex);
   const pathToken = match ? match[1] : null;
+  if (!pathToken) {
+    throw new Error("No path token found");
+  }
   const cookies = req.response.headers["Set-Cookie"];
   const cookie = cookies.split("; ")[0] + ";";
   return {
@@ -342,7 +340,7 @@ async function getApiToken(tokenRequestCode) {
 async function getTelematics(accessToken) {
   if (!accessToken) {
     throw new Error("Not authenticated");
-  } 
+  }
   const searchParams = {
     query:
       "query CarTelematics($vin:String!) { carTelematics(vin: $vin) { battery { averageEnergyConsumptionKwhPer100Km,batteryChargeLevelPercentage,chargerConnectionStatus,chargingCurrentAmps,chargingPowerWatts,chargingStatus,estimatedChargingTimeMinutesToTargetDistance,estimatedChargingTimeToFullMinutes,estimatedDistanceToEmptyKm,estimatedDistanceToEmptyMiles,eventUpdatedTimestamp{iso,unix}}, odometer { averageSpeedKmPerHour,eventUpdatedTimestamp,{iso,unix},odometerMeters,tripMeterAutomaticKm,tripMeterManualKm}}}",
