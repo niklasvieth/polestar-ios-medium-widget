@@ -50,8 +50,8 @@ if (VIN === "VIN") {
 const accessToken = await getAccessToken();
 const vehicleData = await getVehicles(accessToken);
 const telematicData = await getTelematics(accessToken);
-const batteryData = telematicData.carTelematics.battery;
-const odometerData = telematicData.carTelematics.odometer;
+const batteryData = telematicData.carTelematicsV2.battery[0];
+const odometerData = telematicData.carTelematicsV2.odometer[0];
 
 // You can run the script in the app to preview the widget or you can go to the Home Screen, add a new Scriptable widget and configure the widget to run this script.
 // You can also try creating a shortcut that runs this script. Running the shortcut will show widget.
@@ -78,14 +78,9 @@ async function createPolestarWidget(batteryData, odometerData, vehicle) {
   const isCharging = batteryData.chargingStatus === "CHARGING_STATUS_CHARGING";
   const remainingChargingTime = batteryData.estimatedChargingTimeToFullMinutes;
   const rangeKm = batteryData.estimatedDistanceToEmptyKm;
-  const rangeMiles = batteryData.estimatedDistanceToEmptyMiles;
+  const rangeMiles = batteryData.estimatedDistanceToEmptyKm * 0.621371;
   const isChargingDone = batteryData.chargingStatus === "CHARGING_STATUS_DONE";
-  const isConnected =
-    batteryData.chargerConnectionStatus ===
-    "CHARGER_CONNECTION_STATUS_CONNECTED";
-  const chargingAmps = batteryData.chargingCurrentAmps ?? 0;
-  const chargingWatts = batteryData.chargingPowerWatts ?? 0;
-  const chargingKw = parseInt(chargingWatts / 1000);
+  const isConnected = false;
 
   // Prepare image
   if (!vehicle.content.images.studio.angles.includes(IMAGE_ANGLE)) {
@@ -171,7 +166,7 @@ async function createPolestarWidget(batteryData, odometerData, vehicle) {
     const remainingChargeTimeHours = parseInt(remainingChargingTime / 60);
     const remainingChargeTimeMinsRemainder = remainingChargingTime % 60;
     const chargingTimeElement = batteryChargingTimeStack.addText(
-      `${chargingKw} kW  -  ${remainingChargeTimeHours}h ${remainingChargeTimeMinsRemainder}m`
+      `${remainingChargeTimeHours}h ${remainingChargeTimeMinsRemainder}m`
     );
     chargingTimeElement.font = Font.mediumSystemFont(14);
     chargingTimeElement.textOpacity = 0.9;
@@ -196,7 +191,7 @@ async function createPolestarWidget(batteryData, odometerData, vehicle) {
   footerStack.addSpacer();
 
   // Add last seen indicator
-  const lastSeenDate = new Date(batteryData.eventUpdatedTimestamp.iso);
+  const lastSeenDate = new Date(batteryData.timestamp.seconds * 1000);
   const lastSeenText = lastSeenDate.toLocaleString();
   let lastSeenElement;
   if (LAST_SEEN_RELATIVE_DATE) {
@@ -343,9 +338,9 @@ async function getTelematics(accessToken) {
   }
   const searchParams = {
     query:
-      "query CarTelematics($vin:String!) { carTelematics(vin: $vin) { battery { averageEnergyConsumptionKwhPer100Km,batteryChargeLevelPercentage,chargerConnectionStatus,chargingCurrentAmps,chargingPowerWatts,chargingStatus,estimatedChargingTimeMinutesToTargetDistance,estimatedChargingTimeToFullMinutes,estimatedDistanceToEmptyKm,estimatedDistanceToEmptyMiles,eventUpdatedTimestamp{iso,unix}}, odometer { averageSpeedKmPerHour,eventUpdatedTimestamp,{iso,unix},odometerMeters,tripMeterAutomaticKm,tripMeterManualKm}}}",
+      "query CarTelematicsV2($vins:[String!]!) { carTelematicsV2(vins: $vins) { battery { batteryChargeLevelPercentage,chargingStatus,estimatedChargingTimeToFullMinutes,estimatedDistanceToEmptyKm,timestamp,{seconds,nanos}}, odometer { timestamp,{seconds,nanos},odometerMeters}}}",
     variables: {
-      vin: VIN,
+      vins: [VIN],
     },
   };
   const req = new Request(POLESTAR_API_URL_V2);
