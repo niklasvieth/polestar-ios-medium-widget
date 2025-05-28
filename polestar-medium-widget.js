@@ -78,7 +78,7 @@ async function createPolestarWidget(batteryData, odometerData, vehicle) {
   const isCharging = batteryData.chargingStatus === "CHARGING_STATUS_CHARGING";
   const remainingChargingTime = batteryData.estimatedChargingTimeToFullMinutes;
   const rangeKm = batteryData.estimatedDistanceToEmptyKm;
-  const rangeMiles = batteryData.estimatedDistanceToEmptyKm * 0.621371;
+  const rangeMiles = Math.round(batteryData.estimatedDistanceToEmptyKm * 0.621371);
   const isChargingDone = batteryData.chargingStatus === "CHARGING_STATUS_DONE";
   const isConnected = false;
 
