@@ -28,12 +28,14 @@ const LIGHT_BG_COLOR = "FFFFFF";
 // API config
 const POLESTAR_BASE_URL = "https://pc-api.polestar.com/eu-north-1";
 const POLESTAR_API_URL_V2 = `${POLESTAR_BASE_URL}/mystar-v2`;
+const POLESTAR_API_PUBLIC_URL = `${POLESTAR_BASE_URL}/mystar-public`;
 const POLESTAR_API_URL = `${POLESTAR_BASE_URL}/my-star`;
 const POLESTAR_REDIRECT_URI = "https://www.polestar.com/sign-in-callback";
 const POLESTAR_ICON = "https://www.polestar.com/w3-assets/coast-228x228.png";
 const CLIENT_ID = "l3oopkc_10";
 const CODE_VERIFIER = "polestar-ios-widgets-are-enabled-by-scriptable";
 const CODE_CHALLENGE = "adYJTSAVqq6CWBJn7yNdGKwcsmJb8eBewG8WpxnUzaE";
+const PUBLIC_API_KEY = "da2-js63uvc7c5hwpdudt657d5lyou";
 
 // Check that params are set
 if (POLESTAR_EMAIL === "EMAIL") {
@@ -78,22 +80,25 @@ async function createPolestarWidget(batteryData, odometerData, vehicle) {
   const isCharging = batteryData.chargingStatus === "CHARGING_STATUS_CHARGING";
   const remainingChargingTime = batteryData.estimatedChargingTimeToFullMinutes;
   const rangeKm = batteryData.estimatedDistanceToEmptyKm;
-  const rangeMiles = Math.round(batteryData.estimatedDistanceToEmptyKm * 0.621371);
+  const rangeMiles = Math.round(
+    batteryData.estimatedDistanceToEmptyKm * 0.621371
+  );
   const isChargingDone = batteryData.chargingStatus === "CHARGING_STATUS_DONE";
   const isConnected = false;
 
   // Prepare image
-  if (!vehicle.content.images.studio.angles.includes(IMAGE_ANGLE)) {
-    throw new Error(
-      `IMG_ANGLE ${IMAGE_ANGLE} is not in ${vehicle.content.images.studio.angles}`
-    );
+  const { opaque, transparent } = await getCarImages(
+    accessToken,
+    vehicle.modelYear,
+    vehicle.pno34,
+    vehicle.structureWeek
+  );
+  const imageAngles = transparent ?? opaque ?? {};
+  if (!Object.keys(imageAngles).includes(IMAGE_ANGLE)) {
+    throw new Error(`IMG_ANGLE ${IMAGE_ANGLE} is not in ${imageAngles}`);
   }
-  const imgUrl = `${
-    vehicle.content.images.studio.url
-  }&angle=${IMAGE_ANGLE}&bg=${
-    DARK_MODE ? DARK_BG_COLOR : LIGHT_BG_COLOR
-  }&width=600`;
-
+  const imgUrl = imageAngles[IMAGE_ANGLE].url;
+  
   const appIcon = await loadImage(POLESTAR_ICON);
   const title = VEHICLE_NAME ?? vehicle.content.model.name;
   const widget = new ListWidget();
@@ -363,7 +368,7 @@ async function getVehicles(accessToken) {
   }
   const searchParams = {
     query:
-      "query getCars{getConsumerCarsV2{vin,internalVehicleIdentifier,modelYear,content{model{code,name},images,{studio,{url,angles}}},hasPerformancePackage,registrationNo,deliveryDate,currentPlannedDeliveryDate}}",
+      "query GetConsumerCarsV2($locale: String) {getConsumerCarsV2(locale: $locale) { vin primaryDriver internalVehicleIdentifier registrationNo market currentPlannedDeliveryDate deliveryDate edition pno34 owners { information {  ownerType  polestarId } } hasPerformancePackage software { performanceOptimization {  value } } content { exterior {  name } model {  code  name } interior {  name } wheels {  name } dimensions {  wheelbase {  label  value  }  groundClearanceWithPerformance {  value  label  }  groundClearanceWithoutPerformance {  value  label  }  dimensions {  label  value  } } specification {  totalHp  torque  totalKw  battery  trunkCapacity {  value  label  } } motor {  name } performanceOptimizationSpecification {  power {  value  unit  }  torqueMax {  value  unit  }  acceleration {  value  unit  description  } } } modelYear commercialModelYear computedModelYear numberOfDoors features { code description name type } fuelType originalMarket userIsPrimaryDriver structureWeek}}",
     variables: {},
   };
   const req = new Request(POLESTAR_API_URL_V2);
@@ -385,6 +390,37 @@ async function getVehicles(accessToken) {
   }
   VIN = vehicle.vin;
   return vehicle;
+}
+
+async function getCarImages(accessToken, modelYear, pno34, structureWeek) {
+  if (!accessToken) {
+    throw new Error("Not authenticated");
+  }
+  const variables = { modelYear: modelYear, pno34: pno34, structureWeek: structureWeek };
+  if(!variables.modelYear || !variables.pno34 || !variables.structureWeek){ 
+    throw new Error(`Missing parameters to fetch car images: ${JSON.stringify(variables)}`);
+  }
+
+  const searchParams = {
+    operationName: "GetCarImages",
+    query:
+      "query GetCarImages($pno34: String!, $structureWeek: String!, $modelYear: String!) {\n  getCarImages(\n    pno34: $pno34\n    structureWeek: $structureWeek modelYear: $modelYear ) { transparent { url angle } opaque { url angle } }}",
+    variables: variables,
+  };
+  const req = new Request(POLESTAR_API_PUBLIC_URL);
+  req.method = "POST";
+  req.headers = {
+    "Content-Type": "application/json",
+    Authorization: "Bearer " + accessToken,
+    "x-api-key": PUBLIC_API_KEY,
+  };
+  req.body = JSON.stringify(searchParams);
+  const response = await req.loadJSON();
+  const carImages = response?.data?.getCarImages;
+  if (!carImages) {
+    throw new Error("No car images fetched");
+  }
+  return carImages;
 }
 
 async function loadImage(url) {
