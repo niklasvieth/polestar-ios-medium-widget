@@ -15,7 +15,7 @@ let VEHICLE_NAME;
 // let VEHICLE_NAME = "Polestar Custom Name";
 
 // Additional optional configuration
-const IMAGE_ANGLE = "0"; // Possible values 0,1,2,3,4,5
+const IMAGE_ANGLE = 0; // Possible values 0,1,2,3,4,5
 const RANGE_IN_MILES = false; // true
 const LAST_SEEN_RELATIVE_DATE = false; // true
 const MIN_SOC_GREEN = 60;
@@ -29,13 +29,12 @@ const LIGHT_BG_COLOR = "FFFFFF";
 const POLESTAR_BASE_URL = "https://pc-api.polestar.com/eu-north-1";
 const POLESTAR_API_URL_V2 = `${POLESTAR_BASE_URL}/mystar-v2`;
 const POLESTAR_API_PUBLIC_URL = `${POLESTAR_BASE_URL}/mystar-public`;
-const POLESTAR_API_URL = `${POLESTAR_BASE_URL}/my-star`;
+const PUBLIC_API_KEY = "da2-js63uvc7c5hwpdudt657d5lyou";
 const POLESTAR_REDIRECT_URI = "https://www.polestar.com/sign-in-callback";
 const POLESTAR_ICON = "https://www.polestar.com/w3-assets/coast-228x228.png";
 const CLIENT_ID = "l3oopkc_10";
 const CODE_VERIFIER = "polestar-ios-widgets-are-enabled-by-scriptable";
 const CODE_CHALLENGE = "adYJTSAVqq6CWBJn7yNdGKwcsmJb8eBewG8WpxnUzaE";
-const PUBLIC_API_KEY = "da2-js63uvc7c5hwpdudt657d5lyou";
 
 // Check that params are set
 if (POLESTAR_EMAIL === "EMAIL") {
@@ -86,21 +85,16 @@ async function createPolestarWidget(batteryData, odometerData, vehicle) {
   const isChargingDone = batteryData.chargingStatus === "CHARGING_STATUS_DONE";
   const isConnected = false;
 
-  // Prepare image
-  const { opaque, transparent } = await getCarImages(
-    accessToken,
-    vehicle.modelYear,
-    vehicle.pno34,
-    vehicle.structureWeek
-  );
-  const imageAngles = transparent ?? opaque ?? {};
-  if (!Object.keys(imageAngles).includes(IMAGE_ANGLE)) {
-    throw new Error(`IMG_ANGLE ${IMAGE_ANGLE} is not in ${imageAngles}`);
+  const carImages = await getCarImages(accessToken, vehicle.modelYear, vehicle.pno34, vehicle.structureWeek);
+  let imgUrl = null;
+  if (carImages) {
+    const images = carImages.transparent ?? carImages.opaque ?? [];
+    const imageData = images.find(img => img.angle === IMAGE_ANGLE);
+    imgUrl = imageData?.url ?? null;
   }
-  const imgUrl = imageAngles[IMAGE_ANGLE].url;
-  
+
   const appIcon = await loadImage(POLESTAR_ICON);
-  const title = VEHICLE_NAME ?? vehicle.content.model.name;
+  const title = VEHICLE_NAME ?? vehicle.modelName ?? `Polestar (${vehicle.vin.slice(-6)})`;
   const widget = new ListWidget();
   widget.url = "polestar-explore://";
   const mainStack = widget.addStack();
@@ -126,9 +120,11 @@ async function createPolestarWidget(batteryData, odometerData, vehicle) {
 
   // Center Stack
   const contentStack = mainStack.addStack();
-  const carImage = await loadImage(imgUrl);
-  const carImageElement = contentStack.addImage(carImage);
-  carImageElement.imageSize = new Size(150, 90);
+  if (imgUrl) {
+    const carImage = await loadImage(imgUrl);
+    const carImageElement = contentStack.addImage(carImage);
+    carImageElement.imageSize = new Size(150, 90);
+  }
   contentStack.addSpacer();
 
   // Battery Info
@@ -343,10 +339,8 @@ async function getTelematics(accessToken) {
   }
   const searchParams = {
     query:
-      "query CarTelematicsV2($vins:[String!]!) { carTelematicsV2(vins: $vins) { battery { batteryChargeLevelPercentage,chargingStatus,estimatedChargingTimeToFullMinutes,estimatedDistanceToEmptyKm,timestamp,{seconds,nanos}}, odometer { timestamp,{seconds,nanos},odometerMeters}}}",
-    variables: {
-      vins: [VIN],
-    },
+      "query CarTelematicsV2($vins:[String!]!) { carTelematicsV2(vins:$vins) { battery { vin batteryChargeLevelPercentage chargingStatus estimatedChargingTimeToFullMinutes estimatedDistanceToEmptyKm timestamp { seconds nanos } } odometer { vin odometerMeters timestamp { seconds nanos } } } }",
+    variables: { vins: [VIN] },
   };
   const req = new Request(POLESTAR_API_URL_V2);
   req.method = "POST";
@@ -368,7 +362,7 @@ async function getVehicles(accessToken) {
   }
   const searchParams = {
     query:
-      "query GetConsumerCarsV2($locale: String) {getConsumerCarsV2(locale: $locale) { vin primaryDriver internalVehicleIdentifier registrationNo market currentPlannedDeliveryDate deliveryDate edition pno34 owners { information {  ownerType  polestarId } } hasPerformancePackage software { performanceOptimization {  value } } content { exterior {  name } model {  code  name } interior {  name } wheels {  name } dimensions {  wheelbase {  label  value  }  groundClearanceWithPerformance {  value  label  }  groundClearanceWithoutPerformance {  value  label  }  dimensions {  label  value  } } specification {  totalHp  torque  totalKw  battery  trunkCapacity {  value  label  } } motor {  name } performanceOptimizationSpecification {  power {  value  unit  }  torqueMax {  value  unit  }  acceleration {  value  unit  description  } } } modelYear commercialModelYear computedModelYear numberOfDoors features { code description name type } fuelType originalMarket userIsPrimaryDriver structureWeek}}",
+      "query GetConsumerCarsV2 { getConsumerCarsV2 { vin modelYear modelName pno34 structureWeek } }",
     variables: {},
   };
   const req = new Request(POLESTAR_API_URL_V2);
@@ -396,16 +390,15 @@ async function getCarImages(accessToken, modelYear, pno34, structureWeek) {
   if (!accessToken) {
     throw new Error("Not authenticated");
   }
-  const variables = { modelYear: modelYear, pno34: pno34, structureWeek: structureWeek };
-  if(!variables.modelYear || !variables.pno34 || !variables.structureWeek){ 
-    throw new Error(`Missing parameters to fetch car images: ${JSON.stringify(variables)}`);
+  if (!modelYear || !pno34 || !structureWeek) {
+    console.warn(`Missing parameters for car images: modelYear=${modelYear} pno34=${pno34} structureWeek=${structureWeek}`);
+    return null;
   }
-
   const searchParams = {
     operationName: "GetCarImages",
     query:
-      "query GetCarImages($pno34: String!, $structureWeek: String!, $modelYear: String!) {\n  getCarImages(\n    pno34: $pno34\n    structureWeek: $structureWeek modelYear: $modelYear ) { transparent { url angle } opaque { url angle } }}",
-    variables: variables,
+      "query GetCarImages($pno34: String!, $structureWeek: String!, $modelYear: String!, $locale: String) { getCarImages(pno34: $pno34 structureWeek: $structureWeek modelYear: $modelYear locale: $locale) { transparent { url angle } opaque { url angle } } }",
+    variables: { pno34, structureWeek, modelYear: String(modelYear), locale: "en" },
   };
   const req = new Request(POLESTAR_API_PUBLIC_URL);
   req.method = "POST";
@@ -418,7 +411,8 @@ async function getCarImages(accessToken, modelYear, pno34, structureWeek) {
   const response = await req.loadJSON();
   const carImages = response?.data?.getCarImages;
   if (!carImages) {
-    throw new Error("No car images fetched");
+    console.warn("No car images fetched: " + JSON.stringify(response?.errors));
+    return null;
   }
   return carImages;
 }

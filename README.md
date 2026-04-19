@@ -45,7 +45,7 @@ Since the official Polestar App does not support any kind of widgets for iOS, I 
 4. [Optional Configuration] You can decide if you prefer the relative live counter or the absolute timestamp for the last seen date in the widget footer. Default is the relative format. Change the value to `false` if you prefer the absolute date. You can additionally choose the angle of the image to be shown in the widget, change the battery color threshold values and enable miles instead of kilometer values.  
 
     ```js
-    const IMAGE_ANGLE = "0"; // Possible values 0,1,2,3,4,5
+    const IMAGE_ANGLE = 0; // Possible values 0,1,2,3,4,5
     const RANGE_IN_MILES = false; // true
     const LAST_SEEN_RELATIVE_DATE = false; // true
 
